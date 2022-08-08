@@ -1,0 +1,31 @@
+# Build and test artifacts
+*.o
+*.a
+*.so
+*.dylib
+bin/conduit-shim
+build/
+dist/
+
+# Runtime container state and ephemeral roots
+.conduit/
+var/
+run/
+tmp/
+*.log
+*.pid
+*.sock
+
+# Test fixtures and temporary data
+tests/tmp/
+tests/fixtures/*.tar
+coverage/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
