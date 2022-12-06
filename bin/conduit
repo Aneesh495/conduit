@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# bin/conduit - Master CLI entrypoint for Conduit Container Runtime
+#
+# Deterministic container runtime, copy-on-write storage engine, and process
+# isolation fabric implemented in modular Bash.
+# ==============================================================================
+
+set -o pipefail
+
+# Locate library root
+_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export CONDUIT_ROOT="$(cd "${_SELF_DIR}/.." && pwd)"
+export CONDUIT_LIB="${CONDUIT_ROOT}/lib"
+
+# Load master runtime bootstrap
+# shellcheck source=lib/conduit.sh
+source "${CONDUIT_LIB}/conduit.sh"
+
+# Load CLI dispatcher
+conduit::import "cli/commands"
+
+print_usage() {
+    cat <<EOF
+Conduit - Deterministic Container Runtime & Process Isolation Fabric (v${CONDUIT_VERSION})
+
+Usage:
+  conduit [command] [options] [arguments...]
+
+Container Commands:
+  run         Run a command in a new isolated container (-d, -i, -t, -p, -v)
+  exec        Run a command inside an active container
+  ps          List active and stopped containers (-a)
+  logs        Fetch logs of a container (-f, --tail)
+  stop        Stop one or more running containers
+  rm          Remove one or more containers (-f)
+  commit      Create a new image from a container's changes
+
+Image Commands:
+  build       Build an image from a context directory or tarball (-t)
+  images      List images in local content-addressed storage
+  inspect     Display detailed metadata on a container or image
+
+Orchestration & Network:
+  compose     Orchestrate multi-container service topologies (up, down)
+  stats       Display real-time stream of container resource usage statistics
+  doctor      Run system diagnostics and host capability matrix checks
+
+Global Options:
+  --log-level Level (trace, debug, info, warn, error)
+  -v, --version  Show version information
+  -h, --help     Show this help screen
+EOF
+}
+
+# Parse global options
+while (( $# > 0 )); do
+    case "$1" in
+        --log-level)
+            conduit::set_log_level "$2"
+            shift 2
+            ;;
+        -v|--version)
+            echo "conduit version ${CONDUIT_VERSION} (api ${CONDUIT_API_VERSION}, ${CONDUIT_ARCH}-${CONDUIT_OS})"
+            exit 0
+            ;;
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if (( $# == 0 )); then
+    print_usage
+    exit 0
+fi
+
+SUBCOMMAND="$1"
+shift
+
+case "${SUBCOMMAND}" in
+    build)    conduit::cmd_build "$@" ;;
+    run)      conduit::cmd_run "$@" ;;
+    ps)       conduit::cmd_ps "$@" ;;
+    exec)     conduit::cmd_exec "$@" ;;
+    logs)     conduit::cmd_logs "$@" ;;
+    stop)     conduit::cmd_stop "$@" ;;
+    rm)       conduit::cmd_rm "$@" ;;
+    images)   conduit::cmd_images "$@" ;;
+    inspect)  conduit::cmd_inspect "$@" ;;
+    commit)   conduit::cmd_commit "$@" ;;
+    stats)    conduit::cmd_stats "$@" ;;
+    compose)  conduit::cmd_compose "$@" ;;
+    doctor)   conduit::cmd_doctor "$@" ;;
+    help)     print_usage ;;
+    *)
+        echo "conduit: unknown command '${SUBCOMMAND}'" >&2
+        echo "Run 'conduit --help' for usage." >&2
+        exit 1
+        ;;
+esac
