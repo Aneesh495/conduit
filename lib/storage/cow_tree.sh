@@ -103,7 +103,8 @@ conduit::cow_break_link() {
         rm -f "${file_path}" || return 1
         mv -f "${tmp_copy}" "${file_path}" || return 1
 
-        if [[ -n "${journal}" && -f "${journal}" ]]; then
+        if [[ -n "${journal}" ]]; then
+            mkdir -p "$(dirname "${journal}")"
             echo "COW_BREAK ${file_path} $(date +%s)" >> "${journal}"
         fi
         conduit::log_trace "CoW broken hardlink for '${file_path}'"

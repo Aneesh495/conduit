@@ -72,8 +72,9 @@ conduit::process_start() {
         (
             exec 1>>"${log_file}"
             exec 2>&1
+            exec 0</dev/null
             conduit::sandbox_spawn "${container_id}" "${rootfs}" "${hostname}" "/" "bridge" "${state_dir}" "${cmd[@]}"
-        ) &
+        ) </dev/null >>"${log_file}" 2>&1 &
         local child_pid=$!
 
         echo "${child_pid}" > "${container_dir}/pid"
@@ -89,7 +90,7 @@ conduit::process_start() {
             conduit::state_update "${container_id}" "${STATE_STOPPED}" 0 0
             conduit::ipam_release "conduit" "${container_id}"
             conduit::log_debug "Container '${container_id:0:12}' process terminated; reaped state"
-        ) &
+        ) </dev/null >/dev/null 2>&1 &
         disown 2>/dev/null || true
 
         echo "${container_id}"

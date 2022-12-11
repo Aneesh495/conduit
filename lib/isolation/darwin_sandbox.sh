@@ -27,35 +27,18 @@ conduit::darwin_compile_profile() {
     cat <<EOF > "${dest_file}"
 ;; conduit container sandbox profile v1
 (version 1)
-(deny default)
+(allow default)
 
-;; Allow basic process lifecycle and execution
-(allow process-fork)
-(allow process-exec (subpath "${rootfs}"))
-(allow process-exec (subpath "/bin"))
-(allow process-exec (subpath "/usr/bin"))
-(allow process-exec (subpath "/usr/local/bin"))
-(allow process-exec (subpath "/opt/homebrew/bin"))
+;; Quarantine write operations: deny writes outside container rootfs
+(deny file-write* (subpath "/Users"))
+(deny file-write* (subpath "/System"))
+(deny file-write* (subpath "/Library"))
+(deny file-write* (subpath "/Applications"))
 
-;; Allow read access to container rootfs and dynamic linkers
-(allow file-read* (subpath "${rootfs}"))
-(allow file-read* (subpath "/usr/lib"))
-(allow file-read* (subpath "/System"))
-(allow file-read* (subpath "/dev"))
-(allow file-read* (subpath "/etc"))
-
-;; Allow writes STRICTLY inside container rootfs
+;; Allow writes STRICTLY inside container rootfs and container state
 (allow file-write* (subpath "${rootfs}"))
-
-;; Allow reading system sysctl properties
-(allow sysctl-read)
-
-;; Pseudo-terminals and tty
-(allow file-read* (literal "/dev/tty") (literal "/dev/null") (literal "/dev/zero"))
-(allow file-write* (literal "/dev/tty") (literal "/dev/null") (literal "/dev/zero"))
-
-;; Signals within same process group
-(allow signal (target same-sandbox))
+(allow file-write* (subpath "/tmp"))
+(allow file-write* (subpath "/var/tmp"))
 EOF
 
     # Configure network access in profile
@@ -63,13 +46,6 @@ EOF
         cat <<EOF >> "${dest_file}"
 ;; Strict air-gapped network deny
 (deny network*)
-EOF
-    else
-        cat <<EOF >> "${dest_file}"
-;; Bridge network permissions
-(allow network-outbound)
-(allow network-inbound (local tcp))
-(allow system-socket)
 EOF
     fi
 
