@@ -1,0 +1,27 @@
+version: "2.4"
+
+services:
+  redis:
+    image: "conduit-base:latest"
+    command: "/bin/sh -c 'while true; do sleep 5; done'"
+    ports:
+      - "6379:6379"
+
+  backend:
+    image: "conduit-base:latest"
+    command: "/bin/sh -c 'while true; do sleep 5; done'"
+    depends_on:
+      - redis
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  gateway:
+    image: "conduit-base:latest"
+    command: "/bin/sh -c 'while true; do sleep 5; done'"
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
