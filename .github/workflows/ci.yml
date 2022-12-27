@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Environment
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y bsdmainutils python3 gcc make
+          fi
+
+      - name: Compile Native Accelerator Shim
+        run: make build
+
+      - name: Run Diagnostics Doctor
+        run: ./bin/conduit doctor
+
+      - name: Execute TAP Verification Test Suite
+        run: make test
+
+      - name: Run Performance Benchmarks
+        run: make benchmark
+
+      - name: Run Independent State Verification Auditor
+        run: python3 tools/verify_evidence.py
