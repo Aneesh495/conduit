@@ -21,6 +21,9 @@ jobs:
         run: |
           if [ "${{ runner.os }}" = "Linux" ]; then
             sudo apt-get update && sudo apt-get install -y bsdmainutils python3 gcc make
+          else
+            brew list --versions bash >/dev/null || brew install bash
+            echo "$(brew --prefix bash)/bin" >> "$GITHUB_PATH"
           fi
 
       - name: Compile Native Accelerator Shim
